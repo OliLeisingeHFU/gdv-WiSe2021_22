@@ -9,8 +9,8 @@ import cv2
 import numpy as np
 
 # global helper variables
-window_width = 640
-window_height = 480
+window_width = 1024
+window_height = 1024
 
 def getFrequencies(image):
     """ Compute spectral image with a DFT
@@ -31,14 +31,29 @@ def getFrequencies(image):
     # phase for the inverse)
     return spec, mag, phase
 
-def LPFiltering():
-    d
+def LPFiltering(dft_shift):
+    # create circle mask
+    radius = 32
+    mask = np.zeros((window_width, window_height))
+    cy = mask.shape[0] // 2
+    cx = mask.shape[1] // 2
+    cv2.circle(mask, (cx,cy), radius, (255,255,255), -1)[0]
+
+    # blur the mask
+    mask = cv2.GaussianBlur(mask, (19,19), 0)
+
+    # apply mask to dft_shift
+    dft_shift_masked = np.multiply(dft_shift,mask) / 255
+
+    return dft_shift_masked
+
 
 def HPFiltering():
     d
 
 def combine(lpf, hpf):
-    d
+    filtered_lpf = LPFiltering(lpf)
+    filtered_hpf = LPFiltering(hpf)
 
 def createFromSpectrum(mag, phase):
     # convert magnitude and phase into cartesian real and imaginary components
@@ -64,10 +79,8 @@ def createFromSpectrum(mag, phase):
     return img_back
 
 def main():
-    """ Load an image, compute frequency domain image from it and display
-    both or vice versa """
-    image_name_lpf = 'images\\pic1.jpg'
-    image_name_hpf = 'images\\pic2.jpg'
+    image_name_lpf = 'images\\chewing_gum_balls01.jpg'
+    image_name_hpf = 'images\\chewing_gum_balls02.jpg'
 
     # Load the image.
     image_lpf = cv2.imread(image_name_lpf, cv2.IMREAD_GRAYSCALE)
