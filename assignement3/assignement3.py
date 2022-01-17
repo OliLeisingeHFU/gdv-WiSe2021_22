@@ -1,19 +1,23 @@
 '''
-Assignement 03: Hybrid
+Assignement 03: <Hybrid Images>
 Group: <7>
 Names: <Martens, Jonathan; Leisinger, Oliver>
 Date: <12.11.2021>
-Sources: <https://stackoverflow.com/a/66936362, gdv tutorial 10>
+Sources: <https://stackoverflow.com/a/66936362, https://thispersondoesnotexist.com, /gdv tutorial 10>
 '''
 
 import cv2
 import numpy as np
 
-# global helper variables
-window_width = 1024
-window_height = 1024
-blur_size = 19
-mask_radius = 64
+# global variables
+window_width = 300
+window_height = 300
+blur_size = 21
+
+lpf_mask_radius = 30
+hpf_mask_radius = 15
+
+
 
 def spectrumForViewing(dft_shift):
     mag = np.abs(dft_shift)
@@ -28,12 +32,12 @@ def LPFiltering(image):
 
     # create circle mask
     mask = np.zeros_like(image)
-    cy = mask.shape[0] // 2
     cx = mask.shape[1] // 2
-    cv2.circle(mask, (cx,cy), mask_radius, (255,255,255), -1)[0]
+    cy = mask.shape[0] // 2
+    cv2.circle(mask, (cx,cy), lpf_mask_radius, (255,255,255), -1)[0]
 
     # blur the mask
-    mask = cv2.GaussianBlur(mask, (blur_size,blur_size), 0)
+    mask = cv2.GaussianBlur(mask, (blur_size,blur_size), blur_size)
 
     # apply mask to dft_shift
     dft_shift_masked = np.multiply(dft_shift,mask) / 255
@@ -56,9 +60,9 @@ def HPFiltering(image):
     dft_shift = np.fft.fftshift(dft)
 
     mask = np.zeros_like(image)
-    cy = mask.shape[0] // 2
     cx = mask.shape[1] // 2
-    cv2.circle(mask, (cx,cy), mask_radius, (255,255,255), -1)[0]
+    cy = mask.shape[0] // 2
+    cv2.circle(mask, (cx,cy), hpf_mask_radius, (255,255,255), -1)[0]
     mask = 255 - mask
 
     # blur the mask
@@ -77,8 +81,10 @@ def HPFiltering(image):
     return dft_shift_masked
 
 def combine(lpf, hpf):
+
     lpf_dft = LPFiltering(lpf)
     hpf_dft = HPFiltering(hpf)
+
     combined_dft = lpf_dft + hpf_dft
     # show the resulting image
     title_result = 'Combined Frequencies image'
@@ -94,13 +100,17 @@ def combine(lpf, hpf):
 
 
 def main():
-    image_name_lpf = 'assignement3/images/pic1.jpg'
-    image_name_hpf = 'assignement3/images/pic2.jpg'
+    image_name_lpf_1 = 'assignement3/images/pic1.jpg'
+    image_name_hpf_1 = 'assignement3/images/pic2.jpg'
 
-    # Load the image.
-    image_lpf = cv2.imread(image_name_lpf, cv2.IMREAD_GRAYSCALE)
+    image_name_lpf_2 = 'assignement3/images/pic3.jpg'
+    image_name_hpf_2 = 'assignement3/images/pic4.jpg'
+
+    # Load the image. Change image_name_lpf_1  to  image_name_lpf_2  and  image_name_hpf_1  to  image_name_hpf_2 
+    # to load the second result
+    image_lpf = cv2.imread(image_name_lpf_2, cv2.IMREAD_GRAYSCALE)
     image_lpf = cv2.resize(image_lpf, (window_width, window_height))
-    image_hpf = cv2.imread(image_name_hpf, cv2.IMREAD_GRAYSCALE)
+    image_hpf = cv2.imread(image_name_hpf_2, cv2.IMREAD_GRAYSCALE)
     image_hpf = cv2.resize(image_hpf, (window_width, window_height))
 
     # show the original image that will be LPFed
