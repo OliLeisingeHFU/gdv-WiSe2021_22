@@ -1,0 +1,5 @@
+person
+chair
+cell phone
+bottle
+cup

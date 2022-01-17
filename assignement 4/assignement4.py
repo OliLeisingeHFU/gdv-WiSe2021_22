@@ -1,5 +1,6 @@
 # dealing with deep learning models, based on
 # https://learnopencv.com/deep-learning-with-opencvs-dnn-module-a-definitive-guide/
+from pickle import TRUE
 import cv2
 import time
 import numpy as np
@@ -10,6 +11,9 @@ with open('assignement 4/models/object_detection_classes_coco.txt',
           encoding="utf-8"
           ) as f:
     class_names = f.read().split('\n')
+
+# load list of objects in video
+with open('assignement 4/models/objects.txt', 'r',encoding="utf-8") as f: object_names = f.read().split('\n')
 # DEBUG: print(class_names)
 
 # save found objects in set
@@ -25,7 +29,7 @@ net = cv2.dnn.readNet(model='assignement 4/models/frozen_inference_graph_ssd.pb'
 
 
 # capture the video
-cap = cv2.VideoCapture('assignement 4/videos/objects_UH.MOV')
+cap = cv2.VideoCapture('assignement 4/videos/test.mp4')
 # cap = cv2.VideoCapture(0) # uncomment to use the webcam
 # get the video frames' width and height for proper saving of videos
 frame_width = int(cap.get(3))
@@ -42,6 +46,8 @@ if do_write_video:
 cv2.namedWindow('image', cv2.WINDOW_GUI_NORMAL)
 conf_thresh = 0.5
 max_object_size = 0.8
+total_frames = 0
+correct_frames = 0
 
 # detect objects in each frame of the video
 while cap.isOpened():
@@ -49,6 +55,7 @@ while cap.isOpened():
     if ret:
         image = frame
         image_height, image_width, _ = image.shape
+        correctly_detected = False
         # create blob from image
         blob = cv2.dnn.blobFromImage(image=image,
                                      size=(320, 240),
@@ -62,11 +69,13 @@ while cap.isOpened():
         output = net.forward()
         # loop over each of the detections
         for detection in output[0, 0, :, :]:
+            detected_length = 0
             # extract the confidence of the detection
             confidence = detection[2]
             # draw bounding boxes only if the detection confidence is above
             # a certain threshold, else skip
             if confidence > conf_thresh:
+                detected_length += 1
                 # get the class id
                 class_id = detection[1]
                 # map the class id to the class
@@ -87,16 +96,30 @@ while cap.isOpened():
                 cv2.rectangle(image, (int(box_x), int(box_y)), (int(
                     box_width), int(box_height)), color, thickness=2)
                 # put the class name text and the confidence on the detected
-                # object and save the object to set of confidence is high enough
+                # objecth
                 output_text = class_name + ' %.2f' % confidence
                 cv2.putText(image, output_text, (int(box_x), int(
                     box_y - 5)), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-                found.add(class_name)
+                # check if all found objects are actually in the video and add them to the found-set if they are
+                object_length = len(object_names)
+                for x in object_names:
+                    if (class_name == x):
+                        found.add(class_name)
+                        correctly_detected = True
+                    else:
+                        object_length -= 1
+                if (object_length == 0):
+                    correctly_detected = False
+                    
             else:
                 # detection results are sorted, hence after first object
                 # under threshold, we can exit the for loop
                 break
-
+            if (detected_length < 1):
+                correctly_detected = False
+        total_frames += 1
+        if correctly_detected == True:
+            correct_frames +=1
         # end time after detection
         end = time.time()
         # calculate the FPS for current frame detection
@@ -118,7 +141,7 @@ while cap.isOpened():
 
 # release the video capture, save the set of found items and close all windows
 file = open("assignement 4/result/found_objects.txt", "w")
-toWrite = ""
+toWrite = "Correctly detected frames: " + str(correct_frames) + " out of " + str(total_frames) + " frames. Equals " + str(((correct_frames / total_frames) * 100)) + "% "
 for x in found:
     toWrite += ("'" + x + "'" + " ")
 file.write(toWrite)

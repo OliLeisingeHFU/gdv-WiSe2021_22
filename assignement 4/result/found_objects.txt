@@ -1,1 +1,1 @@
-'cup' 'bowl' 
+Correctly detected frames: 0 out of 933 frames. Equals 0.0% 'cell phone' 'cup' 'chair' 'bottle' 'person' 
